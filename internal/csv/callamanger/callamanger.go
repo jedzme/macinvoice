@@ -31,7 +31,7 @@ func Process(restService mhttp.REST, downloadFirst bool, url string, cookie stri
 			}
 			break
 		}
-		log.Info().Msg(fmt.Sprintf("%+v", line))
+		log.Info().Msg(fmt.Sprintf("%+v", line)) // do the actual processing of business logic
 	}
 
 	return nil

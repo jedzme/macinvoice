@@ -78,7 +78,9 @@ func (s *service) GET(url string, headers map[string]string) model.RESTResponse 
 
 	}
 
-	defer resp.Body.Close()
+	if resp != nil && resp.Body != nil {
+		defer resp.Body.Close()
+	}
 
 	return model.RESTResponse{
 		Code:  statusCode,
