@@ -43,26 +43,26 @@ func Set(webserviceEngine *gin.Engine, dependencies Dependencies, supportedServe
 func uploadAndParseHandler(c *gin.Context) {
 	err := c.Request.ParseMultipartForm(10 << 20) // max size 10MB
 	if err != nil {
-		writeResponse(c, fmt.Sprintf("error while parsing multipartform: %+v", err), http.StatusBadRequest)
+		writeResponse(c, fmt.Sprintf("error while parsing multipartform: %+v", err), nil, http.StatusBadRequest)
 		return
 	}
 
 	server := c.Request.FormValue("server")
 	if _, isSupported := _supportedServers[strings.ToLower(server)]; !isSupported {
-		writeResponse(c, fmt.Sprintf("unknown server name: %s", server), http.StatusBadRequest)
+		writeResponse(c, fmt.Sprintf("unknown server name: %s", server), nil, http.StatusBadRequest)
 		return
 	}
 
 	file, fileHeader, err := c.Request.FormFile("file")
 	if err != nil {
-		writeResponse(c, fmt.Sprintf("error while parsing form file: %+v", err), http.StatusBadRequest)
+		writeResponse(c, fmt.Sprintf("error while parsing form file: %+v", err), nil, http.StatusBadRequest)
 		return
 	}
 	defer file.Close()
 
 	buf := bytes.NewBuffer(nil)
 	if _, err := io.Copy(buf, file); err != nil {
-		writeResponse(c, fmt.Sprintf("error while copying form file to a buffer: %+v", err), http.StatusBadRequest)
+		writeResponse(c, fmt.Sprintf("error while copying form file to a buffer: %+v", err), nil, http.StatusBadRequest)
 		return
 	}
 
@@ -75,13 +75,13 @@ func uploadAndParseHandler(c *gin.Context) {
 		Cookie:        "",
 		Authorization: "",
 	}
-	err = _dependencies.CSVService.Handle(req, false, buf.Bytes())
-	if err != nil {
-		writeResponse(c, fmt.Sprintf("error processing: %+v", err), http.StatusFailedDependency)
+	errs := _dependencies.CSVService.Handle(req, false, buf.Bytes())
+	if errs != nil && len(errs) > 0 {
+		writeResponse(c, fmt.Sprintf("errors found during processing"), errs, http.StatusFailedDependency)
 		return
 	}
 
-	writeResponse(c, "success", http.StatusOK)
+	writeResponse(c, "success", nil, http.StatusOK)
 
 	// for debugging purposes; uncomment these lines below and comment-out writeResponse(c, "success", http.StatusOK) above
 	//c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=%s", fileHeader.Filename))
@@ -94,22 +94,22 @@ func downloadAndParseHandler(c *gin.Context) {
 	var req model.RequestPayload
 	err := json.NewDecoder(c.Request.Body).Decode(&req)
 	if err != nil {
-		writeResponse(c, fmt.Sprintf("error while parsing the request body: %+v", err), http.StatusBadRequest)
+		writeResponse(c, fmt.Sprintf("error while parsing the request body: %+v", err), nil, http.StatusBadRequest)
 		return
 	}
 
 	if _, isSupported := _supportedServers[strings.ToLower(req.Name)]; !isSupported {
-		writeResponse(c, fmt.Sprintf("unknown server name: %s", req.Name), http.StatusBadRequest)
+		writeResponse(c, fmt.Sprintf("unknown server name: %s", req.Name), nil, http.StatusBadRequest)
 		return
 	}
 
-	err = _dependencies.CSVService.Handle(req, true, nil)
-	if err != nil {
-		writeResponse(c, fmt.Sprintf("error processing: %+v", err), http.StatusFailedDependency)
+	errs := _dependencies.CSVService.Handle(req, true, nil)
+	if err != nil && len(errs) > 0 {
+		writeResponse(c, fmt.Sprintf("errors found during processing"), errs, http.StatusFailedDependency)
 		return
 	}
 
-	writeResponse(c, "success", http.StatusOK)
+	writeResponse(c, "success", nil, http.StatusOK)
 
 }
 
@@ -143,11 +143,12 @@ func helloWorldHandler(c *gin.Context) {
 	//})
 }
 
-func writeResponse(c *gin.Context, message string, responseStatusCode int) {
+func writeResponse(c *gin.Context, message string, errors []error, responseStatusCode int) {
 
 	c.Header("Content-Type", binding.MIMEJSON)
 	c.JSON(responseStatusCode, gin.H{
 		"message": message,
+		"errors":  errors,
 	})
 
 }

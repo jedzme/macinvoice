@@ -2,7 +2,7 @@
 # MacInvoice Parser
 
 
-## Endpoints
+## Webservice API Endpoints
 
 
 ### Download and Parse

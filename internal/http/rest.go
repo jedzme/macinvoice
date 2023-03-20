@@ -25,7 +25,7 @@ func NewService(config Config) (REST, error) {
 }
 
 func (s *service) GET(url string, headers map[string]string) model.RESTResponse {
-
+	log.Info().Msg("http.GET() executed")
 	var retries = 0
 	var err error
 	var respBytes []byte
@@ -59,6 +59,7 @@ func (s *service) GET(url string, headers map[string]string) model.RESTResponse 
 	for {
 
 		if retries == s.MaxRetries {
+			log.Debug().Msg("Maximum retries reached.")
 			break
 		}
 

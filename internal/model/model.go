@@ -34,3 +34,22 @@ func GetServerEnum(server string) (SERVER, error) {
 
 	return "", fmt.Errorf("unknown server")
 }
+
+type Record struct {
+	Company          string
+	Person           string
+	Name             string
+	DeviceType       string
+	MacAddress       string
+	Registered       bool // string in csv (Yes/No)
+	Status           string
+	UUIDCreationDate string
+	DownloadDate     string
+	HotDesking       bool // string in csv (Yes/No)
+	HotDeskingID     string
+	HotDeskingPhone  string
+	Location         string
+	Group            string
+	Comment          string
+	Firmware         string
+}
